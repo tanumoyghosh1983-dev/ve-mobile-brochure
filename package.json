@@ -1,0 +1,9 @@
+{
+  "name": "ve-brochure-proposal-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VirtualEmployee.com mobile app brochure with instant proposal generation via APITemplate.io",
+  "engines": {
+    "node": ">=18"
+  }
+}

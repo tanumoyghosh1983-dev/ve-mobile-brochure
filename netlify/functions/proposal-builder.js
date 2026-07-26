@@ -19,12 +19,19 @@ function tierFromTotal(total) {
 }
 
 function pickPackage(tier, extrasCount) {
-  const packages = PACKAGE_TIERS[tier] || PACKAGE_TIERS.startup;
+  const allPackages = PACKAGE_TIERS[tier] || PACKAGE_TIERS.startup;
+  // Filter out packages that don't represent "build this app from scratch" —
+  // things like app rescue/audit, ongoing maintenance-only, post-completion
+  // launch support, or discovery-only engagements are real packages but the
+  // wrong match for a from-zero build proposal like this one generates.
+  const EXCLUDE_PATTERNS = /rescue|audit|maintenance|support(?!\s+for)|launch and go-live|discovery and (architecture|prototype)/i;
+  const packages = allPackages.filter(p => !EXCLUDE_PATTERNS.test(p.name));
+  const usable = packages.length > 0 ? packages : allPackages;
   const idx = Math.min(
-    packages.length - 1,
-    Math.floor((extrasCount / 12) * packages.length)
+    usable.length - 1,
+    Math.floor((extrasCount / 12) * usable.length)
   );
-  return packages[Math.max(0, idx)];
+  return usable[Math.max(0, idx)];
 }
 
 function timelineFromTotal(total) {
@@ -55,7 +62,7 @@ function buildProposalHTML(input) {
     : platform.includes("android") ? "Android"
     : "your chosen platform";
 
-  const sizeLabel = { small: "a small, focused app", medium: "a mid-sized app", large: "a large, full-featured app" }[size] || "your app";
+  const sizeLabel = { mvp: "an MVP-scope app", basic: "a basic-scope app", refined: "a fully refined, polished app" }[size] || "your app";
 
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const proposalId = "VE-" + Date.now().toString(36).toUpperCase();
@@ -65,7 +72,7 @@ function buildProposalHTML(input) {
     "<div class=\"proposal-id\">Proposal #" + escapeHtml(proposalId) + "</div></div>" +
     "<div class=\"cover-mid\"><div class=\"eyebrow\">Project Proposal</div>" +
     "<h1>" + escapeHtml(category.label) + " App Development</h1>" +
-    "<p class=\"cover-sub\">Prepared for " + escapeHtml(clientName) + "</p></div>" +
+    (clientName && clientName !== "Your Company" ? "<p class=\"cover-sub\">Prepared for " + escapeHtml(clientName) + "</p>" : "") + "</div>" +
     "<div class=\"cover-bottom\">" +
     "<div class=\"cover-meta\"><span>Prepared by</span><strong>VirtualEmployee.com</strong></div>" +
     "<div class=\"cover-meta\"><span>Date</span><strong>" + escapeHtml(today) + "</strong></div>" +
@@ -207,8 +214,8 @@ function wrapDocument(bodyHTML) {
   "--line:rgba(23,19,11,.12);--coral:#FF5A36;--butter:#FFD649;--mint:#B9EFD9;--mint-deep:#0E8A66;--teal:#0EA5A4;" +
   "--shadow:0 1px 2px rgba(23,19,11,.03), 0 12px 32px -20px rgba(23,19,11,.18);}" +
   "body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;}" +
-  ".page{width:210mm;min-height:297mm;padding:20mm 18mm;page-break-after:always;position:relative;background:var(--bg);" +
-  "background-image:radial-gradient(rgba(23,19,11,.9) .6px,transparent .6px);background-size:3.4px 3.4px;}" +
+  ".page{width:210mm;padding:20mm 18mm;page-break-after:always;page-break-inside:avoid;position:relative;background:var(--bg);" +
+  "background-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%224%22%20height%3D%224%22%3E%3Ccircle%20cx%3D%222%22%20cy%3D%222%22%20r%3D%220.6%22%20fill%3D%22rgba%2823%2C19%2C11%2C0.35%29%22/%3E%3C/svg%3E');background-size:4px 4px;}" +
   ".page:last-child{page-break-after:auto;}" +
   ".page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px;padding-bottom:14px;border-bottom:1px solid var(--line);}" +
   ".page-eyebrow{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--coral);display:flex;align-items:center;gap:8px;}" +
@@ -223,7 +230,7 @@ function wrapDocument(bodyHTML) {
   ".brand-mark{font-family:'Inter',sans-serif;font-size:19px;font-weight:800;letter-spacing:-0.02em;}" +
   ".brand-mark span{color:var(--coral);}" +
   /* cover */
-  ".cover-page{background:var(--ink);background-image:radial-gradient(rgba(244,242,235,.35) .6px,transparent .6px);background-size:3.4px 3.4px;color:var(--bg);display:flex;flex-direction:column;justify-content:space-between;}" +
+  ".cover-page{background:var(--ink);background-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%224%22%20height%3D%224%22%3E%3Ccircle%20cx%3D%222%22%20cy%3D%222%22%20r%3D%220.6%22%20fill%3D%22rgba%28244%2C242%2C235%2C0.25%29%22/%3E%3C/svg%3E');background-size:4px 4px;color:var(--bg);display:flex;flex-direction:column;justify-content:space-between;}" +
   ".cover-page .brand-mark{color:var(--bg);}.cover-page .brand-mark span{color:var(--butter);}" +
   ".cover-top{display:flex;justify-content:space-between;align-items:center;}" +
   ".proposal-id{font-size:11px;color:rgba(244,242,235,0.45);font-weight:600;}" +
